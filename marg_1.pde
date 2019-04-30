@@ -35,6 +35,15 @@ class Phrase{
     return l;
   }
   
+  long getDecayTime()
+  {
+    long l = startTime;
+    l += in * 1000;
+    l += sustain * 1000;
+    
+    return l;
+  }
+  
 };
 
 
@@ -81,21 +90,15 @@ void setPhrase(int i)
 }
 
 
-void draw()
+void drawPhrase(Phrase p)
 {
-  background(0);
-  
-  Phrase p = phrases.get(currentPhrase);
-  
   float delta = (float)(millis() - p.startTime)/1000.0;
   
   float inProg = delta/p.in;
   inProg = min(1.0, inProg);
   
   float outProg = delta - (p.sustain + p.in)/p.out;
-  
 
-  
   if(outProg > 0)
   {
     fill(255,255 * (1- outProg));
@@ -107,6 +110,16 @@ void draw()
   }
   
   text(p.text, p.x, p.y);
+}
+
+
+void draw()
+{
+  background(0);
+  
+  Phrase p = phrases.get(currentPhrase);
+  
+  drawPhrase(p);
   
   if(millis() > p.getTargetTime())
   {
