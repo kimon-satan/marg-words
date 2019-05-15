@@ -1,50 +1,19 @@
+import processing.video.*;
+
+Capture cam;
+
 PFont font;
-JSONArray values;
+JSONArray wordsValues;
+JSONObject cameraValues;
+
+float camMul_w;
+
 ArrayList<Phrase> phrases;
 int currentPhrase;
 
-long targetTime;
+boolean isSquare;
+int squareSize;
 
-class Phrase{
-  
-  int x;
-  int y;
-  String text;
-  float in;
-  float sustain;
-  float out;
-  long startTime;
-  
-  Phrase()
-  {
-    x = 0;
-    y = 0;
-    in = 1.0;
-    text = "";
-    sustain = 5.0;
-    startTime  = 0;
-  }
-  
-  long getTargetTime()
-  {
-    long l = startTime;
-    l += in * 1000;
-    l += sustain * 1000;
-    l += out * 1000;
-    
-    return l;
-  }
-  
-  long getDecayTime()
-  {
-    long l = startTime;
-    l += in * 1000;
-    l += sustain * 1000;
-    
-    return l;
-  }
-  
-};
 
 
 void setup()
@@ -59,12 +28,12 @@ void setup()
   
   phrases = new ArrayList<Phrase>();
   
-  values = loadJSONArray("test.json");
+  wordsValues = loadJSONArray("test.json");
 
-  for (int i = 0; i < values.size(); i++) 
+  for (int i = 0; i < wordsValues.size(); i++) 
   {
     
-    JSONObject j = values.getJSONObject(i);
+    JSONObject j = wordsValues.getJSONObject(i);
     Phrase p = new Phrase();
     p.x = j.getInt("x");
     p.y = j.getInt("y");
@@ -77,9 +46,57 @@ void setup()
 
   }
   
+  cameraValues = loadJSONObject("cameraConfig.json");
+  
   currentPhrase = 0;
   setPhrase(currentPhrase);
+  
+  setupCameras();
+  
+  isSquare = false;
 
+}
+
+void setupCameras()
+{
+  
+ String[] cameras = Capture.list();
+
+  if (cameras == null) 
+  {
+    println("Failed to retrieve the list of available cameras, will try the default...");
+    cam = new Capture(this, 640, 480);
+  } 
+  if (cameras.length == 0) 
+  {
+    println("There are no cameras available for capture.");
+    exit();
+  } 
+  else 
+  {
+    
+    
+    //println("Available cameras:");
+    printArray(cameras);
+
+    // The camera can be initialized directly using an element
+    // from the array returned by list():
+    String s = cameraValues.getString("camera_name");
+    int w = cameraValues.getInt("width");
+    int h = cameraValues.getInt("height");
+    
+    squareSize = cameraValues.getInt("square_size");
+  
+    //cam = new Capture(this, cameras[18]);
+    cam = new Capture(this, w,h,s,30);
+    // Or, the settings can be defined based on the text in the list
+    //cam = new Capture(this, 640, 480, "Built-in iSight", 30);
+   
+    camMul_w = (float)width/cam.width;
+    
+    // Start capturing the images from the camera
+    cam.start();
+  } 
 }
 
 
@@ -119,14 +136,40 @@ void draw()
   
   Phrase p = phrases.get(currentPhrase);
   
-  drawPhrase(p);
-  
-  if(millis() > p.getTargetTime())
+  if (cam.available() == true) 
   {
-    if(currentPhrase < phrases.size() -1 )
+    cam.read();
+  }
+  
+  fill(255);
+  
+  int w = (int)(640 * camMul_w);
+  int h = (int)(480 * camMul_w);
+  
+  image(cam, 0, 0, width, h);
+  
+  
+  if(isSquare)
+  {
+    push();
+    rectMode(CENTER);
+    noStroke();
+    fill(255);
+    rect(width/2,height/2,squareSize,squareSize);
+    pop();
+  }
+  else
+  {
+    
+    drawPhrase(p);
+    
+    if(millis() > p.getTargetTime())
     {
-      currentPhrase = currentPhrase + 1;
-      setPhrase(currentPhrase);
+      if(currentPhrase < phrases.size() -1 )
+      {
+        currentPhrase = currentPhrase + 1;
+        setPhrase(currentPhrase);
+      }
     }
   }
   
@@ -141,4 +184,9 @@ void keyPressed()
       currentPhrase = 0;
       setPhrase(currentPhrase);
    }
+   
+   if(key == 's'){
+      isSquare = !isSquare; 
+   }
+   
 }
