@@ -13,6 +13,8 @@ int currentPhrase;
 
 boolean isSquare;
 int squareSize;
+int square_x;
+int square_y;
 
 
 
@@ -86,6 +88,8 @@ void setupCameras()
     int h = cameraValues.getInt("height");
     
     squareSize = cameraValues.getInt("square_size");
+    square_x = cameraValues.getInt("square_x");
+    square_y = cameraValues.getInt("square_y");
   
     //cam = new Capture(this, cameras[18]);
     cam = new Capture(this, w,h,s,30);
@@ -155,7 +159,12 @@ void draw()
     rectMode(CENTER);
     noStroke();
     fill(255);
-    rect(width/2,height/2,squareSize,squareSize);
+    rect(
+      width/2 + square_x,
+      height/2 + square_y,
+      squareSize,
+      squareSize
+    );
     pop();
   }
   else
